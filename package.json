@@ -5,6 +5,7 @@
     "type": "git",
     "url": "git+https://github.com/jambam-cho/custom-action.git"
   },
+ "type": "module",
   "author": "...",
   "license": "MIT",
   "scripts": {
