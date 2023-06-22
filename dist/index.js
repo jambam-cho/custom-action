@@ -35,16 +35,21 @@ async function downloadFile(url, outputFilePath) {
     return new Promise(async (resolve, reject) => {
         const response = await (0, node_fetch_1.default)(url);
         if (response.ok) {
-            const file = fs.createWriteStream(outputFilePath);
-            const downloadStream = response.body.pipe(file);
-            downloadStream.on('finish', () => {
-                file.close();
-                resolve();
-            });
-            downloadStream.on('error', (err) => {
-                fs.unlinkSync(outputFilePath);
-                reject(err.message);
-            });
+            if (response.body) {
+                const file = fs.createWriteStream(outputFilePath);
+                const downloadStream = response.body.pipe(file);
+                downloadStream.on('finish', () => {
+                    file.close();
+                    resolve();
+                });
+                downloadStream.on('error', (err) => {
+                    fs.unlinkSync(outputFilePath);
+                    reject(err.message);
+                });
+            }
+            else {
+                reject('Response body is null.');
+            }
         }
         else {
             reject(`Unexpected response: ${response.statusText}`);
@@ -58,7 +63,7 @@ async function getAssetUrl(releasesUrl, authToken) {
     const jsonResponse = await (0, node_fetch_1.default)(releasesUrl, {
         headers
     });
-    const latestRelease = await jsonResponse.json();
+    const latestRelease = (await jsonResponse.json());
     if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
         return latestRelease.assets[0].browser_download_url;
     }
