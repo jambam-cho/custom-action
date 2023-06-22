@@ -1,0 +1,22 @@
+{
+  "name": "downloadfile-action",
+  "version": "1.0.0",
+  "private": true,
+  "repository": "...",
+  "author": "...",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "package": "ncc build --source-map --license licenses.txt"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.1.0",
+    "@types/node": "^16.8.8",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.29.2",
+    "typescript": "^4.4.3"
+  }
+}

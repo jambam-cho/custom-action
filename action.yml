@@ -1,0 +1,17 @@
+name: "Download File"
+description: "Download a file from a given URL"
+inputs:
+  file-url:
+    description: "The URL of the file to download"
+    required: true
+  output-file-path:
+    description: "The local file path to save the downloaded file"
+    required: true
+outputs:
+  downloaded-file-path:
+    description: "The local file path of the downloaded file"
+runs:
+  using: "composite"
+  steps:
+    - run: ${{ github.action_path }}/dist/index.js
+      shell: bash
