@@ -19,7 +19,7 @@ async function downloadFile(url: string, outputFilePath: string) {
         resolve();
       });
 
-      downloadStream.on("error", (err) => {
+      downloadStream.on("error", (err: Error) => {
         fs.unlinkSync(outputFilePath);
         reject(err.message);
       });
@@ -30,7 +30,7 @@ async function downloadFile(url: string, outputFilePath: string) {
 }
 
 async function getAssetUrl(releasesUrl: string, authToken: string | undefined): Promise<string> {
-  const headers = authToken ? { "Authorization": `token ${authToken}` } : {};
+  const headers: HeadersInit = authToken ? { "Authorization": `token ${authToken}` } : {};
   const jsonResponse = await fetch(releasesUrl, {
     headers
   });
@@ -53,8 +53,12 @@ async function run() {
     await downloadFile(assetUrl, outputFilePath);
 
     core.setOutput("downloaded-file-path", outputFilePath);
-  } catch (error) {
-    core.setFailed(error.message);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      core.setFailed(error.message);
+    } else {
+      core.setFailed("An unexpected error occurred.");
+    }
   }
 }
 
