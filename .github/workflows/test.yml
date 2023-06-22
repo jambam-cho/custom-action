@@ -3,7 +3,7 @@ on: # rebuild any PRs and main branch changes
   pull_request:
   push:
     branches:
-      - main
+      - 'main'
       - 'releases/*'
 
 jobs:
@@ -15,4 +15,3 @@ jobs:
           npm install
       - run: |
           npm run all
-          
