@@ -9939,11 +9939,22 @@ async function getAssetUrl(releasesUrl, authToken) {
     const jsonResponse = await fetch(releasesUrl, {
         headers
     });
-    const latestRelease = (await jsonResponse.json());
-    if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
-        return latestRelease.assets[0].browser_download_url;
+    if (!jsonResponse.ok) {
+        throw new Error(`Unexpected response: ${jsonResponse.statusText}`);
     }
-    throw new Error('Failed to fetch asset URL');
+    const responseText = await jsonResponse.text();
+    try {
+        const latestRelease = JSON.parse(responseText);
+        if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
+            return latestRelease.assets[0].browser_download_url;
+        }
+        throw new Error('Failed to fetch asset URL');
+    }
+    catch (error) {
+        console.error('An error occurred while parsing the JSON:', error);
+        console.error('Received data:', responseText);
+        throw error;
+    }
 }
 async function run() {
     try {
