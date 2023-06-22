@@ -52,7 +52,7 @@ async function getAssetUrl(
     throw new Error(`Unexpected response: ${jsonResponse.statusText}`)
   }
 
-  const responseText = await jsonResponse.text();
+  const responseText = (await jsonResponse.text()).replace(/^\uFEFF/, '');
 
   try {
     const latestRelease = JSON.parse(responseText) as Release
@@ -67,6 +67,7 @@ async function getAssetUrl(
     throw error;
   }
 }
+
 
 
 async function run() {

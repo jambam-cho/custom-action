@@ -9942,7 +9942,7 @@ async function getAssetUrl(releasesUrl, authToken) {
     if (!jsonResponse.ok) {
         throw new Error(`Unexpected response: ${jsonResponse.statusText}`);
     }
-    const responseText = await jsonResponse.text();
+    const responseText = (await jsonResponse.text()).replace(/^\uFEFF/, '');
     try {
         const latestRelease = JSON.parse(responseText);
         if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
