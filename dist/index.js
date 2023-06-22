@@ -10773,6 +10773,7 @@ async function downloadFile(url, outputFilePath, authToken) {
         },
         request: { fetch: fetch },
     });
+    console.log('Download response:', response.status, response.headers);
     const file = external_fs_.createWriteStream(outputFilePath);
     if (response.status === 200) {
         response.data.pipe(file);
@@ -10785,7 +10786,7 @@ async function downloadFile(url, outputFilePath, authToken) {
         });
     }
     else {
-        throw new Error(`Unexpected response: ${response.status}`);
+        throw new Error(`Unexpected response for downloading file: ${response.status}`);
     }
 }
 async function getAssetUrl(releasesUrl, authToken) {
@@ -10793,11 +10794,12 @@ async function getAssetUrl(releasesUrl, authToken) {
         headers: { Authorization: `token ${authToken}` },
         request: { fetch: fetch },
     });
+    console.log('Asset response:', response.status, response.headers);
     const latestRelease = response.data;
-    if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
+    if (latestRelease && latestRelease.assets && latestRelease.assets.length > 0) {
         return latestRelease.assets[0].browser_download_url;
     }
-    throw new Error('Failed to fetch asset URL');
+    throw new Error(`Failed to fetch asset URL. Status code: ${response.status}`);
 }
 async function run() {
     try {
