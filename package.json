@@ -9,7 +9,7 @@
   "author": "...",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "ncc build src/index.ts -o dist",
     "package": "ncc build --source-map --license licenses.txt"
   },
   "dependencies": {
