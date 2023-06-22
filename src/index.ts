@@ -1,38 +1,45 @@
-import * as core from '@actions/core'
-import * as fs from 'fs'
-import { promisify } from 'util'
-import { request } from '@octokit/request'
+import * as core from '@actions/core';
+import * as fs from 'fs';
+import { promisify } from 'util';
+import { request } from '@octokit/request';
+import fetch from 'node-fetch';
 
-const pipeline = promisify(require('stream').pipeline)
+const pipeline = promisify(require('stream').pipeline);
 
 interface Release {
-  assets: Array<{ browser_download_url: string }>
+  assets: Array<{ browser_download_url: string }>;
 }
 
 async function downloadFile(url: string, outputFilePath: string, authToken: string) {
   const response = await request("GET " + url, {
     headers: {
       Accept: "application/octet-stream",
-      Authorization: `token ${authToken}`
-    }
+      Authorization: `token ${authToken}`,
+    },
+    request: { fetch },
   });
 
   const file = fs.createWriteStream(outputFilePath);
-  response.data.pipe(file);
+  if (response.status === 200) {
+    response.data.pipe(file);
 
-  file.on('finish', () => {
-    file.close();
-  })
+    file.on('finish', () => {
+      file.close();
+    });
 
-  file.on('error', (err: Error) => {
-    fs.unlinkSync(outputFilePath);
-    throw err.message;
-  })
+    file.on('error', (err: Error) => {
+      fs.unlinkSync(outputFilePath);
+      throw err.message;
+    });
+  } else {
+    throw new Error(`Unexpected response: ${response.status}`);
+  }
 }
 
 async function getAssetUrl(releasesUrl: string, authToken: string): Promise<string> {
   const response = await request("GET " + releasesUrl, {
-    headers: { Authorization: `token ${authToken}` }
+    headers: { Authorization: `token ${authToken}` },
+    request: { fetch },
   });
 
   const latestRelease = response.data as Release
