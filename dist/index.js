@@ -30,18 +30,18 @@ const core = __importStar(require("@actions/core"));
 const fs = __importStar(require("fs"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const util_1 = require("util");
-const pipeline = (0, util_1.promisify)(require("stream").pipeline);
+const pipeline = (0, util_1.promisify)(require('stream').pipeline);
 async function downloadFile(url, outputFilePath) {
     return new Promise(async (resolve, reject) => {
         const response = await (0, node_fetch_1.default)(url);
         if (response.ok) {
             const file = fs.createWriteStream(outputFilePath);
             const downloadStream = response.body.pipe(file);
-            downloadStream.on("finish", () => {
+            downloadStream.on('finish', () => {
                 file.close();
                 resolve();
             });
-            downloadStream.on("error", (err) => {
+            downloadStream.on('error', (err) => {
                 fs.unlinkSync(outputFilePath);
                 reject(err.message);
             });
@@ -52,7 +52,9 @@ async function downloadFile(url, outputFilePath) {
     });
 }
 async function getAssetUrl(releasesUrl, authToken) {
-    const headers = authToken ? { "Authorization": `token ${authToken}` } : {};
+    const headers = authToken
+        ? { Authorization: `token ${authToken}` }
+        : {};
     const jsonResponse = await (0, node_fetch_1.default)(releasesUrl, {
         headers
     });
@@ -60,23 +62,23 @@ async function getAssetUrl(releasesUrl, authToken) {
     if (latestRelease && latestRelease.assets && latestRelease.assets[0]) {
         return latestRelease.assets[0].browser_download_url;
     }
-    throw new Error("Failed to fetch asset URL");
+    throw new Error('Failed to fetch asset URL');
 }
 async function run() {
     try {
-        const releasesUrl = core.getInput("releases-url", { required: true });
-        const outputFilePath = core.getInput("output-file-path", { required: true });
-        const authToken = core.getInput("auth-token", { required: false });
+        const releasesUrl = core.getInput('releases-url', { required: true });
+        const outputFilePath = core.getInput('output-file-path', { required: true });
+        const authToken = core.getInput('auth-token', { required: false });
         const assetUrl = await getAssetUrl(releasesUrl, authToken);
         await downloadFile(assetUrl, outputFilePath);
-        core.setOutput("downloaded-file-path", outputFilePath);
+        core.setOutput('downloaded-file-path', outputFilePath);
     }
     catch (error) {
         if (error instanceof Error) {
             core.setFailed(error.message);
         }
         else {
-            core.setFailed("An unexpected error occurred.");
+            core.setFailed('An unexpected error occurred.');
         }
     }
 }
