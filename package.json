@@ -1,10 +1,9 @@
 {
-  "name": "downloadfile-action",
+  "name": "custom-action",
   "version": "1.0.0",
   "private": true,
-  "repository": "...",
-  "author": "...",
-  "license": "MIT",
+  "description": "custom-action",
+  "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
     "format": "prettier --write **/*.ts",
@@ -13,11 +12,20 @@
     "package": "ncc build --source-map --license licenses.txt",
     "all": "npm run build && npm run format && npm run lint && npm run package"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jambam-cho/custom-action.git"
+  },
+  "keywords": [
+    "actions",
+    "node",
+    "setup"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.6.0",
-    "@actions/github": "^5.1.0",
-    "@types/node": "^16.8.8",
-    "node-fetch": "^2.6.7"
+    "@actions/core": "^1.2.6",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
