@@ -10841,8 +10841,8 @@ async function getAssetDownloadUrls(githubRepo, authToken, osArchPairs) {
 //   }
 // }
 async function downloadAsset(asset, outputDir, authToken) {
-    const url = asset.browser_download_url.split('https://api.github.com')[1];
-    const response = await (0,dist_node.request)('GET' + url, {
+    console.log('Downloading asset:', asset.browser_download_url);
+    const response = await (0,dist_node.request)('GET' + asset.browser_download_url, {
         headers: {
             Accept: 'application/octet-stream',
             Authorization: `token ${authToken}`
