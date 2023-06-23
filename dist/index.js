@@ -9968,6 +9968,9 @@ async function downloadAsset(asset, outputDir, authToken) {
             throw err.message;
         });
     }
+    else if (response.status === 404) {
+        throw new Error(`File not found: ${asset.browser_download_url}`);
+    }
     else {
         throw new Error(`Unexpected response for downloading file: ${response.status}`);
     }
