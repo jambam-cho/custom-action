@@ -97,7 +97,6 @@ async function downloadAssets(
 async function run() {
   try {
     const githubRepo = core.getInput('github-repo', {required: true})
-    const outputFilePath = core.getInput('output-file-path', {required: true})
     const authToken = core.getInput('auth-token', {required: true})
     const outputDir = core.getInput('output-dir', {required: true})
     const osArchPairs = core
@@ -119,7 +118,7 @@ async function run() {
 
     console.log('Assets downloaded successfully')
 
-    core.setOutput('downloaded-file-path', outputFilePath)
+    core.setOutput('downloaded-file-path', outputDir)
   } catch (error: unknown) {
     if (error instanceof Error) {
       core.setFailed(error.message)
