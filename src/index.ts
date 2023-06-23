@@ -60,70 +60,34 @@ async function getAssetDownloadUrls(
   return assets
 }
 
-// async function downloadAsset(
-//   asset: Asset,
-//   outputDir: string,
-//   authToken: string
-// ) {
-//   const response = await fetch(asset.browser_download_url, {
-//     headers: {
-//       Accept: 'application/octet-stream',
-//       Authorization: `token ${authToken}`
-//     }
-//   })
-//
-//   console.log('Download response:', response.status, response.headers)
-//
-//   if (!response.body) {
-//     throw new Error('Error: The response body is null.')
-//   }
-//
-//   const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
-//   if (response.status === 200) {
-//     response.body.pipe(file)
-//
-//     file.on('finish', () => {
-//       file.close()
-//     })
-//
-//     file.on('error', (err: Error) => {
-//       fs.unlinkSync(`${outputDir}/${asset.name}`)
-//       throw err.message
-//     })
-//   } else {
-//     throw new Error(
-//       `Unexpected response for downloading file: ${response.status}`
-//     )
-//   }
-// }
-
 async function downloadAsset(
   asset: Asset,
   outputDir: string,
   authToken: string
 ) {
-  console.log('Downloading asset:', asset.browser_download_url)
-  const response = await request('GET' + asset.browser_download_url, {
+  const response = await fetch(asset.browser_download_url, {
     headers: {
       Accept: 'application/octet-stream',
       Authorization: `token ${authToken}`
-    },
-    request: {fetch}
+    }
   })
 
   console.log('Download response:', response.status, response.headers)
 
-  const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
+  if (!response.body) {
+    throw new Error('Error: The response body is null.')
+  }
 
+  const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
   if (response.status === 200) {
-    response.data.pipe(file)
+    response.body.pipe(file)
 
     file.on('finish', () => {
       file.close()
     })
 
     file.on('error', (err: Error) => {
-      fs.unlinkSync(outputDir)
+      fs.unlinkSync(`${outputDir}/${asset.name}`)
       throw err.message
     })
   } else {
@@ -132,6 +96,42 @@ async function downloadAsset(
     )
   }
 }
+
+// async function downloadAsset(
+//   asset: Asset,
+//   outputDir: string,
+//   authToken: string
+// ) {
+//   console.log('Downloading asset:', asset.browser_download_url)
+//   const response = await request('GET' + asset.browser_download_url, {
+//     headers: {
+//       Accept: 'application/octet-stream',
+//       Authorization: `token ${authToken}`
+//     },
+//     request: {fetch}
+//   })
+//
+//   console.log('Download response:', response.status, response.headers)
+//
+//   const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
+//
+//   if (response.status === 200) {
+//     response.data.pipe(file)
+//
+//     file.on('finish', () => {
+//       file.close()
+//     })
+//
+//     file.on('error', (err: Error) => {
+//       fs.unlinkSync(outputDir)
+//       throw err.message
+//     })
+//   } else {
+//     throw new Error(
+//       `Unexpected response for downloading file: ${response.status}`
+//     )
+//   }
+// }
 
 async function downloadAssets(
   assets: Asset[],
