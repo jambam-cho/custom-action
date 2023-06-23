@@ -4,10 +4,6 @@ import {promisify} from 'util'
 import fetch from 'node-fetch'
 import https from 'https'
 
-interface ReleaseData {
-  data: RespData
-}
-
 interface RespData {
   tag_name: string
   assets: Asset[]
@@ -35,9 +31,9 @@ async function getLatestRelease(
     throw new Error(`Failed to fetch latest release for ${githubRepo}`)
   }
 
-  const resp = (await response.json()) as ReleaseData
+  const resp = (await response.json()) as RespData
 
-  return resp.data
+  return resp
 }
 
 async function getAssetDownloadUrls(
