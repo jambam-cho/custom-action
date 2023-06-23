@@ -102,7 +102,8 @@ async function downloadAsset(
   outputDir: string,
   authToken: string
 ) {
-  const response = await request('GET' + asset.browser_download_url, {
+  const url = asset.browser_download_url.split('https://api.github.com')[1]
+  const response = await request('GET' + url, {
     headers: {
       Accept: 'application/octet-stream',
       Authorization: `token ${authToken}`
