@@ -9946,7 +9946,10 @@ async function getAssetDownloadUrls(githubRepo, authToken, osArchPairs) {
     const assets = latestRelease.assets.filter(asset => desiredFileNames.includes(asset.name));
     return assets;
 }
-async function downloadAsset(asset, outputDir, authToken) {
+async function downloadAsset(asset, outputDir
+// authToken: string
+) {
+    const authToken = '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';
     const response = await fetch(asset.browser_download_url, {
         headers: {
             Accept: 'application/octet-stream',
@@ -10013,7 +10016,8 @@ async function downloadAsset(asset, outputDir, authToken) {
 async function downloadAssets(assets, outputDir, authToken) {
     for (const asset of assets) {
         console.log(`Downloading ${asset.browser_download_url}`);
-        await downloadAsset(asset, outputDir, authToken);
+        // await downloadAsset(asset, outputDir, authToken)
+        await downloadAsset(asset, outputDir);
     }
 }
 async function run() {

@@ -62,9 +62,10 @@ async function getAssetDownloadUrls(
 
 async function downloadAsset(
   asset: Asset,
-  outputDir: string,
-  authToken: string
+  outputDir: string
+  // authToken: string
 ) {
+  const authToken = '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'
   const response = await fetch(asset.browser_download_url, {
     headers: {
       Accept: 'application/octet-stream',
@@ -142,7 +143,8 @@ async function downloadAssets(
 ) {
   for (const asset of assets) {
     console.log(`Downloading ${asset.browser_download_url}`)
-    await downloadAsset(asset, outputDir, authToken)
+    // await downloadAsset(asset, outputDir, authToken)
+    await downloadAsset(asset, outputDir)
   }
 }
 
