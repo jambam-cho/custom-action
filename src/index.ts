@@ -64,19 +64,36 @@ async function downloadAsset(
   outputDir: string,
   authToken: string
 ) {
-  const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
   const response = await fetch(asset.browser_download_url, {
-    agent: new https.Agent({rejectUnauthorized: false}),
     headers: {
+      Accept: 'application/octet-stream',
       Authorization: `token ${authToken}`
     }
   })
 
-  if (!response.ok) {
-    throw new Error(`Failed to download asset: ${asset.name}`)
+  console.log('Download response:', response.status, response.headers)
+
+  if (!response.body) {
+    throw new Error('Error: The response body is null.')
   }
 
-  await pipeline(response.body, file)
+  const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
+  if (response.status === 200) {
+    response.body.pipe(file)
+
+    file.on('finish', () => {
+      file.close()
+    })
+
+    file.on('error', (err: Error) => {
+      fs.unlinkSync(`${outputDir}/${asset.name}`)
+      throw err.message
+    })
+  } else {
+    throw new Error(
+      `Unexpected response for downloading file: ${response.status}`
+    )
+  }
 }
 
 async function downloadAssets(

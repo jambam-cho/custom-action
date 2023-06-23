@@ -9914,11 +9914,7 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 	});
 }
 
-// EXTERNAL MODULE: external "https"
-var external_https_ = __nccwpck_require__(5687);
-var external_https_default = /*#__PURE__*/__nccwpck_require__.n(external_https_);
 ;// CONCATENATED MODULE: ./src/index.ts
-
 
 
 
@@ -9951,17 +9947,30 @@ async function getAssetDownloadUrls(githubRepo, authToken, osArchPairs) {
     return assets;
 }
 async function downloadAsset(asset, outputDir, authToken) {
-    const file = external_fs_default().createWriteStream(`${outputDir}/${asset.name}`);
     const response = await fetch(asset.browser_download_url, {
-        agent: new (external_https_default()).Agent({ rejectUnauthorized: false }),
         headers: {
+            Accept: 'application/octet-stream',
             Authorization: `token ${authToken}`
         }
     });
-    if (!response.ok) {
-        throw new Error(`Failed to download asset: ${asset.name}`);
+    console.log('Download response:', response.status, response.headers);
+    if (!response.body) {
+        throw new Error('Error: The response body is null.');
     }
-    await src_pipeline(response.body, file);
+    const file = external_fs_default().createWriteStream(`${outputDir}/${asset.name}`);
+    if (response.status === 200) {
+        response.body.pipe(file);
+        file.on('finish', () => {
+            file.close();
+        });
+        file.on('error', (err) => {
+            external_fs_default().unlinkSync(`${outputDir}/${asset.name}`);
+            throw err.message;
+        });
+    }
+    else {
+        throw new Error(`Unexpected response for downloading file: ${response.status}`);
+    }
 }
 async function downloadAssets(assets, outputDir, authToken) {
     for (const asset of assets) {
