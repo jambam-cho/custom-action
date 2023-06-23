@@ -1,75 +1,132 @@
-import * as core from '@actions/core';
-import * as fs from 'fs';
-import { promisify } from 'util';
-import { request } from '@octokit/request';
-import fetch from 'node-fetch';
+import * as core from '@actions/core'
+import fs from 'fs'
+import {promisify} from 'util'
+import fetch from 'node-fetch'
+import https from 'https'
 
-const pipeline = promisify(require('stream').pipeline);
-
-interface Release {
-  assets: Array<{ browser_download_url: string }>;
+interface ReleaseData {
+  data: RespData
 }
 
-async function downloadFile(url: string, outputFilePath: string, authToken: string) {
-  const response = await request("GET " + url, {
+interface RespData {
+  tag_name: string
+  assets: Asset[]
+}
+
+interface Asset {
+  name: string
+  browser_download_url: string
+}
+
+const pipeline = promisify(require('stream').pipeline)
+
+async function getLatestRelease(
+  githubRepo: string,
+  authToken: string
+): Promise<RespData> {
+  const url = `https://api.github.com/repos/${githubRepo}/releases/latest`
+  const response = await fetch(url, {
     headers: {
-      Accept: "application/octet-stream",
-      Authorization: `token ${authToken}`,
-    },
-    request: { fetch },
-  });
+      Authorization: `token ${authToken}`
+    }
+  })
 
-  console.log('Download response:', response.status, response.headers);
-
-  const file = fs.createWriteStream(outputFilePath);
-  if (response.status === 200) {
-    response.data.pipe(file);
-
-    file.on('finish', () => {
-      file.close();
-    });
-
-    file.on('error', (err: Error) => {
-      fs.unlinkSync(outputFilePath);
-      throw err.message;
-    });
-  } else {
-    throw new Error(`Unexpected response for downloading file: ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch latest release for ${githubRepo}`)
   }
+
+  const resp = (await response.json()) as ReleaseData
+
+  return resp.data
 }
 
-async function getAssetUrl(releasesUrl: string, authToken: string): Promise<string> {
-  const response = await request("GET " + releasesUrl, {
-    headers: { Authorization: `token ${authToken}` },
-    request: { fetch },
-  });
+async function getAssetDownloadUrls(
+  githubRepo: string,
+  authToken: string,
+  osArchPairs: string[]
+): Promise<Asset[]> {
+  const latestRelease = await getLatestRelease(githubRepo, authToken)
+  const tag = latestRelease.tag_name.split('v')[1]
 
-  console.log('Asset response:', response.status, response.headers);
+  const repoName = githubRepo.split('/')[1]
+  const filePrefix = `${repoName}_${tag}`
+  const desiredFileNames = osArchPairs.flatMap(osArch => [
+    `${repoName}_${tag}_${osArch}.zip`,
+    `${repoName}_${tag}_SHA256SUMS`,
+    `${repoName}_${tag}_SHA256SUMS.sig`
+  ])
 
-  const latestRelease = response.data as Release
-  if (latestRelease && latestRelease.assets && latestRelease.assets.length > 0) {
-    return latestRelease.assets[0].browser_download_url;
+  const assets = latestRelease.assets.filter(asset =>
+    desiredFileNames.includes(asset.name)
+  )
+
+  return assets
+}
+
+async function downloadAsset(
+  asset: Asset,
+  outputDir: string,
+  authToken: string
+) {
+  const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
+  const response = await fetch(asset.browser_download_url, {
+    agent: new https.Agent({rejectUnauthorized: false}),
+    headers: {
+      Authorization: `token ${authToken}`
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to download asset: ${asset.name}`)
   }
-  throw new Error(`Failed to fetch asset URL. Status code: ${response.status}`);
+
+  await pipeline(response.body, file)
+}
+
+async function downloadAssets(
+  assets: Asset[],
+  outputDir: string,
+  authToken: string
+) {
+  for (const asset of assets) {
+    console.log(`Downloading ${asset.browser_download_url}`)
+    await downloadAsset(asset, outputDir, authToken)
+  }
 }
 
 async function run() {
   try {
-    const releasesUrl = core.getInput('releases-url', { required: true });
-    const outputFilePath = core.getInput('output-file-path', { required: true });
-    const authToken = core.getInput('auth-token', { required: false });
+    const githubRepo = core.getInput('github-repo', {required: true})
+    const outputFilePath = core.getInput('output-file-path', {required: true})
+    const authToken = core.getInput('auth-token', {required: true})
+    const outputDir = core.getInput('output-dir', {required: true})
+    const osArchPairs = core
+      .getInput('osArch', {required: true})
+      .split(',')
+      .map(pair => pair.trim())
 
-    const assetUrl = await getAssetUrl(releasesUrl, authToken);
-    await downloadFile(assetUrl, outputFilePath, authToken);
+    const assets = await getAssetDownloadUrls(
+      githubRepo,
+      authToken,
+      osArchPairs
+    )
+    console.log(
+      'Asset download URLs:',
+      assets.map(asset => asset.browser_download_url)
+    )
 
-    core.setOutput('downloaded-file-path', outputFilePath);
+    await downloadAssets(assets, outputDir, authToken)
+
+    console.log('Assets downloaded successfully')
+
+    core.setOutput('downloaded-file-path', outputFilePath)
   } catch (error: unknown) {
     if (error instanceof Error) {
-      core.setFailed(error.message);
+      core.setFailed(error.message)
     } else {
-      core.setFailed('An unexpected error occurred.');
+      core.setFailed('An unexpected error occurred.')
     }
   }
 }
 
-run();
+run()
