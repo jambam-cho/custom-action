@@ -7,13 +7,10 @@ inputs:
   osArch:
     description: "The OS architecture to download the file for"
     required: true
-  output-file-path:
-    description: "The local file path to save the downloaded file"
-    required: true
   auth-token:
     description: "The GitHub auth token to use for downloading the file"
     required: true
-  outputDir:
+  output-dir:
     description: "The local directory path to save the downloaded file"
     required: true
 outputs:
@@ -22,3 +19,4 @@ outputs:
 runs:
   using: 'node12'
   main: 'dist/index.js'
+  

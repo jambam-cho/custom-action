@@ -9972,7 +9972,6 @@ async function downloadAssets(assets, outputDir, authToken) {
 async function run() {
     try {
         const githubRepo = core.getInput('github-repo', { required: true });
-        const outputFilePath = core.getInput('output-file-path', { required: true });
         const authToken = core.getInput('auth-token', { required: true });
         const outputDir = core.getInput('output-dir', { required: true });
         const osArchPairs = core.getInput('osArch', { required: true })
@@ -9982,7 +9981,7 @@ async function run() {
         console.log('Asset download URLs:', assets.map(asset => asset.browser_download_url));
         await downloadAssets(assets, outputDir, authToken);
         console.log('Assets downloaded successfully');
-        core.setOutput('downloaded-file-path', outputFilePath);
+        core.setOutput('downloaded-file-path', outputDir);
     }
     catch (error) {
         if (error instanceof Error) {
