@@ -9935,7 +9935,7 @@ async function getLatestRelease(githubRepo, authToken) {
         throw new Error(`Failed to fetch latest release for ${githubRepo}`);
     }
     const resp = (await response.json());
-    return resp.data;
+    return resp;
 }
 async function getAssetDownloadUrls(githubRepo, authToken, osArchPairs) {
     const latestRelease = await getLatestRelease(githubRepo, authToken);
