@@ -1,6 +1,10 @@
 import * as core from '@actions/core'
 import fs from 'fs'
 import fetch from 'node-fetch'
+import {
+  createRegistryProviderVersion,
+  uploadFiles
+} from './createRegistryProviderVersion'
 
 interface RespData {
   tag_name: string
@@ -11,6 +15,12 @@ interface Asset {
   id: number
   name: string
   browser_download_url: string
+}
+
+interface GetAssetDownloadUrlsResponse {
+  tag: string
+  repoName: string
+  assets: Asset[]
 }
 
 async function getLatestRelease(
@@ -37,7 +47,7 @@ async function getAssetDownloadUrls(
   githubRepo: string,
   authToken: string,
   osArchPairs: string[]
-): Promise<Asset[]> {
+): Promise<GetAssetDownloadUrlsResponse> {
   const latestRelease = await getLatestRelease(githubRepo, authToken)
   const tag = latestRelease.tag_name.split('v')[1]
 
@@ -57,15 +67,16 @@ async function getAssetDownloadUrls(
       browser_download_url: asset.browser_download_url
     }))
 
-  return assets
+  return {tag, repoName, assets}
 }
 
 async function downloadAsset(
+  githubRepo: string,
   asset: Asset,
   outputDir: string,
   authToken: string
 ) {
-  const url = `https://api.github.com/repos/jambam-cho/terraform-provider-hashicups/releases/assets/${asset.id}`
+  const url = `https://api.github.com/repos/${githubRepo}/releases/assets/${asset.id}`
   const response = await fetch(url, {
     headers: {
       Accept: 'application/octet-stream',
@@ -99,13 +110,14 @@ async function downloadAsset(
 }
 
 async function downloadAssets(
+  githubRepo: string,
   assets: Asset[],
   outputDir: string,
   authToken: string
 ) {
   for (const asset of assets) {
-    console.log(`Downloading asset: ${asset.id}`)
-    await downloadAsset(asset, outputDir, authToken)
+    console.log(`Downloading asset: ${asset.browser_download_url}`)
+    await downloadAsset(githubRepo, asset, outputDir, authToken)
   }
 }
 
@@ -114,23 +126,31 @@ async function run() {
     const githubRepo = core.getInput('github-repo', {required: true})
     const authToken = core.getInput('auth-token', {required: true})
     const outputDir = core.getInput('output-dir', {required: true})
+    const tfToken = core.getInput('tf-token', {required: true})
+    const gpgKey = core.getInput('gpg-key', {required: true})
+    const tfUrl = core.getInput('terraform-url', {required: true})
+    const provider = core.getInput('provider', {required: true})
     const osArchPairs = core
       .getInput('osArch', {required: true})
       .split(',')
       .map(pair => pair.trim())
 
-    const assets = await getAssetDownloadUrls(
+    const result = await getAssetDownloadUrls(
       githubRepo,
       authToken,
       osArchPairs
     )
+    const {tag, repoName, assets} = result
     console.log(
       'Asset IDs:',
       assets.map(asset => asset.id)
     )
 
-    await downloadAssets(assets, outputDir, authToken)
+    await downloadAssets(githubRepo, assets, outputDir, authToken)
+    const {shasumsUpload, shasumsSigUpload} =
+      await createRegistryProviderVersion(tfToken, gpgKey, tfUrl, provider)
 
+    await uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName, tag)
     console.log('Assets downloaded successfully')
 
     core.setOutput('downloaded-file-path', outputDir)

@@ -13,6 +13,18 @@ inputs:
   output-dir:
     description: "The local directory path to save the downloaded file"
     required: true
+  tf-token:
+    description: "The Terraform Registry token to use"
+    required: true
+  gpg-key:
+    description: "The GPG key to use for verifying the file"
+    required: true
+  tf-url:
+    description: "The Terraform Registry URL to use"
+    required: true
+  provider:
+    description: "The provider to Use"
+    required: true
 outputs:
   downloaded-file-path:
     description: "The local file path of the downloaded file"
