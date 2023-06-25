@@ -1,9 +1,6 @@
 import * as core from '@actions/core'
 import fs from 'fs'
-import {promisify} from 'util'
 import fetch from 'node-fetch'
-import {request} from '@octokit/request'
-import https from 'https'
 
 interface RespData {
   tag_name: string
@@ -11,11 +8,10 @@ interface RespData {
 }
 
 interface Asset {
+  id: number
   name: string
   browser_download_url: string
 }
-
-const pipeline = promisify(require('stream').pipeline)
 
 async function getLatestRelease(
   githubRepo: string,
@@ -53,27 +49,29 @@ async function getAssetDownloadUrls(
     `${repoName}_${tag}_SHA256SUMS.sig`
   ])
 
-  const assets = latestRelease.assets.filter(asset =>
-    desiredFileNames.includes(asset.name)
-  )
+  const assets = latestRelease.assets
+    .filter(asset => desiredFileNames.includes(asset.name))
+    .map(asset => ({
+      id: asset.id,
+      name: asset.name,
+      browser_download_url: asset.browser_download_url
+    }))
 
   return assets
 }
 
 async function downloadAsset(
   asset: Asset,
-  outputDir: string
-  // authToken: string
+  outputDir: string,
+  authToken: string
 ) {
-  const authToken = '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'
-  const response = await fetch(asset.browser_download_url, {
+  const url = `https://api.github.com/repos/jambam-cho/terraform-provider-hashicups/releases/assets/${asset.id}`
+  const response = await fetch(url, {
     headers: {
       Accept: 'application/octet-stream',
       Authorization: `token ${authToken}`
     }
   })
-
-  console.log('Download response:', response.status, response.headers)
 
   if (!response.body) {
     throw new Error('Error: The response body is null.')
@@ -92,7 +90,7 @@ async function downloadAsset(
       throw err.message
     })
   } else if (response.status === 404) {
-    throw new Error(`File not found: ${asset.browser_download_url}`)
+    throw new Error(`File not found: asset ${asset.id}`)
   } else {
     throw new Error(
       `Unexpected response for downloading file: ${response.status}`
@@ -100,51 +98,14 @@ async function downloadAsset(
   }
 }
 
-// async function downloadAsset(
-//   asset: Asset,
-//   outputDir: string,
-//   authToken: string
-// ) {
-//   console.log('Downloading asset:', asset.browser_download_url)
-//   const response = await request('GET' + asset.browser_download_url, {
-//     headers: {
-//       Accept: 'application/octet-stream',
-//       Authorization: `token ${authToken}`
-//     },
-//     request: {fetch}
-//   })
-//
-//   console.log('Download response:', response.status, response.headers)
-//
-//   const file = fs.createWriteStream(`${outputDir}/${asset.name}`)
-//
-//   if (response.status === 200) {
-//     response.data.pipe(file)
-//
-//     file.on('finish', () => {
-//       file.close()
-//     })
-//
-//     file.on('error', (err: Error) => {
-//       fs.unlinkSync(outputDir)
-//       throw err.message
-//     })
-//   } else {
-//     throw new Error(
-//       `Unexpected response for downloading file: ${response.status}`
-//     )
-//   }
-// }
-
 async function downloadAssets(
   assets: Asset[],
   outputDir: string,
   authToken: string
 ) {
   for (const asset of assets) {
-    console.log(`Downloading ${asset.browser_download_url}`)
-    // await downloadAsset(asset, outputDir, authToken)
-    await downloadAsset(asset, outputDir)
+    console.log(`Downloading asset: ${asset.id}`)
+    await downloadAsset(asset, outputDir, authToken)
   }
 }
 
@@ -164,8 +125,8 @@ async function run() {
       osArchPairs
     )
     console.log(
-      'Asset download URLs:',
-      assets.map(asset => asset.browser_download_url)
+      'Asset IDs:',
+      assets.map(asset => asset.id)
     )
 
     await downloadAssets(assets, outputDir, authToken)
