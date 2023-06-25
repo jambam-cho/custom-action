@@ -148,7 +148,7 @@ async function run() {
 
     await downloadAssets(githubRepo, assets, outputDir, authToken)
     const {shasumsUpload, shasumsSigUpload} =
-      await createRegistryProviderVersion(tfToken, gpgKey, tfUrl, provider)
+      await createRegistryProviderVersion(tfToken, tag, gpgKey, tfUrl, provider)
 
     await uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName, tag)
     console.log('Assets downloaded successfully')
