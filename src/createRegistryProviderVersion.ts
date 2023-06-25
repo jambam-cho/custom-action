@@ -8,6 +8,7 @@ interface UploadLinks {
 
 export async function createRegistryProviderVersion(
   tfToken: string,
+  tag: string,
   gpgKey: string,
   tfUrl: string,
   provider: string
@@ -19,7 +20,7 @@ export async function createRegistryProviderVersion(
     data: {
       type: 'registry-provider-versions',
       attributes: {
-        version: '0.3.0',
+        version: tag,
         'key-id': gpgKey, // GPG Key from terraform cloud
         protocols: ['6.0']
       }

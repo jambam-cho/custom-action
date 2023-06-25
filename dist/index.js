@@ -16751,14 +16751,14 @@ axios.default = axios;
 ;// CONCATENATED MODULE: ./src/createRegistryProviderVersion.ts
 
 
-async function createRegistryProviderVersion(tfToken, gpgKey, tfUrl, provider) {
+async function createRegistryProviderVersion(tfToken, tag, gpgKey, tfUrl, provider) {
     const token = tfToken;
     const url = `${tfUrl}/${provider}/versions`;
     const payload = {
         data: {
             type: 'registry-provider-versions',
             attributes: {
-                version: '0.3.0',
+                version: tag,
                 'key-id': gpgKey,
                 protocols: ['6.0']
             }
@@ -16898,7 +16898,7 @@ async function run() {
         const { tag, repoName, assets } = result;
         console.log('Asset IDs:', assets.map(asset => asset.id));
         await downloadAssets(githubRepo, assets, outputDir, authToken);
-        const { shasumsUpload, shasumsSigUpload } = await createRegistryProviderVersion(tfToken, gpgKey, tfUrl, provider);
+        const { shasumsUpload, shasumsSigUpload } = await createRegistryProviderVersion(tfToken, tag, gpgKey, tfUrl, provider);
         await uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName, tag);
         console.log('Assets downloaded successfully');
         core.setOutput('downloaded-file-path', outputDir);
