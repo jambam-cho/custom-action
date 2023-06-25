@@ -128,7 +128,7 @@ async function run() {
     const outputDir = core.getInput('output-dir', {required: true})
     const tfToken = core.getInput('tf-token', {required: true})
     const gpgKey = core.getInput('gpg-key', {required: true})
-    const tfUrl = core.getInput('terraform-url', {required: true})
+    const tfUrl = core.getInput('tf-url', {required: true})
     const provider = core.getInput('provider', {required: true})
     const osArchPairs = core
       .getInput('osArch', {required: true})
