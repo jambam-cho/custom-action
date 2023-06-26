@@ -5,6 +5,7 @@ import {
   createRegistryProviderVersion,
   uploadFiles
 } from './createRegistryProviderVersion'
+import {getShasum, postPlatformData, uploadBinary} from './postPlatformData'
 
 interface RespData {
   tag_name: string
@@ -152,6 +153,25 @@ async function run() {
 
     await uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName, tag)
     console.log('Assets downloaded successfully')
+
+    for (const osArch of osArchPairs) {
+      const {shasum, fileName} = await getShasum(
+        outputDir,
+        repoName,
+        tag,
+        osArch
+      )
+      const providerBinaryUploadLink = await postPlatformData(
+        tfToken,
+        tfUrl,
+        provider,
+        tag,
+        osArch,
+        shasum,
+        fileName
+      )
+      await uploadBinary(outputDir, fileName, providerBinaryUploadLink)
+    }
 
     core.setOutput('downloaded-file-path', outputDir)
   } catch (error: unknown) {
