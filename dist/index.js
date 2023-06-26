@@ -16810,7 +16810,74 @@ async function uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName,
     }
 }
 
+;// CONCATENATED MODULE: ./src/postPlatformData.ts
+
+
+
+
+async function getShasum(outputDir, repoName, tag, osArch) {
+    const sha256sumFile = `${outputDir}/${repoName}_${tag}_SHA256SUMS`;
+    const fileName = `${repoName}_${tag}_${osArch}.zip`;
+    const sha256sumContent = external_fs_default().readFileSync(sha256sumFile, 'utf-8');
+    const lines = sha256sumContent.split('\n');
+    for (const line of lines) {
+        if (line.includes(fileName)) {
+            const shasum = line.split(' ')[0];
+            return { shasum, fileName };
+        }
+    }
+    throw new Error(`Shasum not found for file ${fileName}`);
+}
+async function postPlatformData(tfToken, tfUrl, provider, tag, osArch, shasum, filename) {
+    const url = new external_url_.URL(`${tfUrl}/${provider}/versions/${tag}/platforms`);
+    const parts = osArch.split('_');
+    const os = parts[0];
+    const arch = parts[1];
+    const payload = {
+        data: {
+            type: 'registry-provider-version-platforms',
+            attributes: {
+                os,
+                arch,
+                shasum,
+                filename
+            }
+        }
+    };
+    const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${tfToken}`,
+            'Content-Type': 'application/vnd.api+json'
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to POST platform data: ${errorText}`);
+    }
+    const jsonResponse = (await response.json());
+    const providerBinaryUploadLink = jsonResponse.data.links['provider-binary-upload'];
+    return providerBinaryUploadLink;
+}
+async function uploadBinary(outputDir, fileName, uploadUrl) {
+    try {
+        const filePath = `${outputDir}/${fileName}`;
+        const fileStream = external_fs_default().createReadStream(filePath);
+        await lib_axios.put(uploadUrl, fileStream, {
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            }
+        });
+    }
+    catch (error) {
+        const axiosError = error;
+        throw new Error(`Failed to upload binary: ${axiosError.message}`);
+    }
+}
+
 ;// CONCATENATED MODULE: ./src/index.ts
+
 
 
 
@@ -16901,6 +16968,11 @@ async function run() {
         const { shasumsUpload, shasumsSigUpload } = await createRegistryProviderVersion(tfToken, tag, gpgKey, tfUrl, provider);
         await uploadFiles(shasumsUpload, shasumsSigUpload, outputDir, repoName, tag);
         console.log('Assets downloaded successfully');
+        for (const osArch of osArchPairs) {
+            const { shasum, fileName } = await getShasum(outputDir, repoName, tag, osArch);
+            const providerBinaryUploadLink = await postPlatformData(tfToken, tfUrl, provider, tag, osArch, shasum, fileName);
+            await uploadBinary(outputDir, fileName, providerBinaryUploadLink);
+        }
         core.setOutput('downloaded-file-path', outputDir);
     }
     catch (error) {
