@@ -25,6 +25,9 @@ inputs:
   provider:
     description: "The provider to Use"
     required: true
+  createProvider:
+    description: "Create the provider"
+    required: false
 outputs:
   downloaded-file-path:
     description: "The local file path of the downloaded file"

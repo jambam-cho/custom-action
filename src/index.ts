@@ -6,6 +6,7 @@ import {
   uploadFiles
 } from './createRegistryProviderVersion'
 import {getShasum, postPlatformData, uploadBinary} from './postPlatformData'
+import {createRegistryProvider} from './createProvider'
 
 interface RespData {
   tag_name: string
@@ -131,10 +132,15 @@ async function run() {
     const gpgKey = core.getInput('gpg-key', {required: true})
     const tfUrl = core.getInput('tf-url', {required: true})
     const provider = core.getInput('provider', {required: true})
+    const creatProvider = core.getInput('create-provider', {required: false})
     const osArchPairs = core
       .getInput('osArch', {required: true})
       .split(',')
       .map(pair => pair.trim())
+
+    if (creatProvider === 'true') {
+      await createRegistryProvider(tfToken, provider)
+    }
 
     const result = await getAssetDownloadUrls(
       githubRepo,
